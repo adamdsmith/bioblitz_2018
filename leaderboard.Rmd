@@ -51,7 +51,7 @@ Row
 ### Leaderboards last updated
 
 ```{r}
-valueBox(value = format(Sys.time(), '%d %B, %Y'), icon = "fa-calendar")
+valueBox(value = format(Sys.time(), '%d %B, %Y'), icon = "glyphicon-calendar")
 ```
 
 ### Unique taxa documented
@@ -63,13 +63,13 @@ valueBox(n_distinct(contest_recs_spp$sci_name), icon = "glyphicon-camera")
 ### Unique contributors
 
 ```{r}
-valueBox(value = n_distinct(contest_recs$user), icon = "fa-users")
+valueBox(value = n_distinct(contest_recs$user), icon = "glyphicon-user")
 ```
 
 ### Refuges/Hatcheries with entries
 
 ```{r}
-valueBox(n_distinct(contest_recs$orgname), icon = "fa-pagelines")
+valueBox(n_distinct(contest_recs$orgname), icon = "glyphicon-leaf")
 ```
 
 ### BioBlitz days remaining
