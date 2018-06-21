@@ -18,7 +18,7 @@ knitr::opts_chunk$set(echo = FALSE)
 pacman::p_load(flexdashboard, DT, fwsinat, dplyr, tidyr)
 source("./R/harvest_and_update.R")
 
-update_contest_recs()
+update_contest_recs(harvest = FALSE)
 
 nwr18 <- readRDS("./output/nwr18_stats.rds")
 nfh18 <- readRDS("./output/nfh18_stats.rds")
