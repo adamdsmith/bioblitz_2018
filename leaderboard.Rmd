@@ -13,6 +13,10 @@ body {
 }
 </style>
 
+<a href="http://www.inaturalist.org" target="_blank">
+  <img height="65" src="inaturalist_banner.png"/>
+</a>
+
 ```{r setup, include=FALSE, message=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 pacman::p_load(flexdashboard, DT, fwsinat, dplyr, tidyr)
