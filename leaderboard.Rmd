@@ -11,11 +11,30 @@ body {
 .navbar{
   visibility: hidden
 }
+.col2 {
+  columns: 2 200px;         /* number of columns and width in pixels*/
+  -webkit-columns: 2 200px; /* chrome, safari */
+  -moz-columns: 2 200px;    /* firefox */
+}
 </style>
 
 <a href="http://www.inaturalist.org" target="_blank">
   <img height="65" src="inaturalist_banner.png"/>
 </a>
+
+### Bio-blitz links of interest
+
+- [Bio-blitz contest announcement](https://drive.google.com/open?id=177ORN3RcpGUk6twn0FypOmz_LeWVI1FS){target="_blank"}
+- [Bio-blitz FAQ](https://drive.google.com/open?id=10Ssf4UJP61JTi5VENJacopY7kobVI4Ea){target="_blank"}
+- iNaturalist tips of the week: 
+<div class="col2">
+    - Tip 1: [Turning off auto upload](https://drive.google.com/open?id=1egVqzTDPUHmiaIquHTDfOF8Xrh0t7z5c){target="_blank"}
+    - Tip 2: [Taking photos outside of the iNaturalist app](https://drive.google.com/open?id=1EEYeXkgR7gf0f1KzCTJ95YN6hx-lFF5x){target="_blank"}
+    - Tip 3: [Tracking observations on your favorite refuges and hatcheries](https://drive.google.com/open?id=1xEJdFh408I3hpAm26cjC7WmZMpOsK7-b){target="_blank"}
+    - Tip 4: [Finding observations in need of further verification](https://drive.google.com/open?id=1V48dCDFyOGUogpCTBzcPjGtRO8Y6IZNQ){target="_blank"}
+    - Tip 5: [Improving photos for species ID](https://drive.google.com/open?id=10IUbuKBYMcPJrlIQ5UlNKy2Koav8J9zd){target="_blank"}
+    - Tip 6: [iNaturalist value and harness subject matter experts](https://drive.google.com/open?id=1T-VSXcJAsjQoGfxhz6Xv6MhOd3G3e7L3){target="_blank"}
+</div>
 
 ```{r setup, include=FALSE, message=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
@@ -27,17 +46,21 @@ update_contest_recs(harvest = FALSE)
 nwr18 <- readRDS("./output/nwr18_stats.rds")
 nfh18 <- readRDS("./output/nfh18_stats.rds")
 
+# Contest boundaries
+start_date <- "2018-06-01"
+end_date <- "2018-11-30"
+
 all_recs <- bind_rows(nwr18, nfh18) %>%
   mutate(orgname = itistools::Cap(orgname),
          orgname = gsub("National Wildlife Refuge", "NWR", orgname),
          orgname = gsub("National Fish Hatchery", "NFH", orgname),
          orgname = gsub(" And Conservation Area", "/CA", orgname),
-         orgname = gsub("D'arbonne", "D'Arbonne", orgname))
+         orgname = gsub("D'arbonne", "D'Arbonne", orgname)) %>%
+  filter(date <= as.Date(end_date))
 spp_recs <- all_recs %>%
   filter(itis_taxon_rank %in% c("Genus", "Species", "Subspecies", "Variety"),
          grade == "research")
 
-start_date <- "2018-06-01"
 
 contest_recs <- all_recs %>%
   filter(date >= as.Date(start_date))
@@ -156,4 +179,11 @@ DT::datatable(most_users,  rownames = FALSE, options = list(
                     list(width = '60px', targets = 2),
                     list(className = 'dt-left', targets = 1))
 ))
+```
+
+```{r upload, eval = FALSE}
+markdown::rpubsUpload("Region 4 Refuge and Hatchery iNaturalist Bioblitz 2018 - Contest Leaderboards",
+                      "leaderboard.html",
+                      "https://api.rpubs.com/api/v1/document/391845/d5466570ba89463c90e2a6edde57691c",
+                       method = "internal")
 ```
