@@ -1,0 +1,213 @@
+---
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+---
+
+<style>
+body {
+  padding-top:0px
+}
+.navbar{
+  visibility: hidden
+}
+.col3 {
+  columns: 3 150px;         /* number of columns and width in pixels*/
+  -webkit-columns: 3 150px; /* chrome, safari */
+  -moz-columns: 3 1500px;    /* firefox */
+}
+</style>
+
+<font size="6"><b>That's a wrap!</b></font>
+
+<font size="4">
+
+Put a bow on the 2018 Southeast Region Refuge and Hatchery iNaturalist Bioblitz!
+
+Thanks to the hundreds of participating naturalists at more than 100 regional refuges and hatcheries!
+
+Please consider these results <b>unofficial</b> until a formal announcement of the winners is made.
+
+Enjoy some unofficial numbers while you wait on the official results/announcements:
+<ul>
+  <li>&gt; 16,000 observations</li>
+  <li>&gt; 10,500 observations identified by the community to species</li>
+  <li>&gt; 700 contributors</li>
+</ul>
+
+Compared to the same time period last year:
+<ul>
+  <li>&gt; 69% increase in observations</li>
+  <li>&gt; 52% increase in observations identified to species</li>
+  <li>&gt; 51% increase in unique species observed</li>
+  <li>&gt; 8% <b>decrease</b> in unique contributors (interesting!)</li>
+  <li>&gt; 9% increase in contributors making &ge;5 observations</li>
+  <li>7% increase in number of participating refuges</li>
+</ul>
+
+</font>
+
+### Bio-blitz links of interest
+
+- [Bio-blitz contest announcement](https://drive.google.com/open?id=177ORN3RcpGUk6twn0FypOmz_LeWVI1FS){target="_blank"}
+- [Bio-blitz FAQ](https://drive.google.com/open?id=10Ssf4UJP61JTi5VENJacopY7kobVI4Ea){target="_blank"}
+- iNaturalist tips of the week: 
+<div class="col3">
+    - Tip 1: [Turning off auto upload](https://drive.google.com/open?id=1egVqzTDPUHmiaIquHTDfOF8Xrh0t7z5c){target="_blank"}
+    - Tip 2: [Taking photos outside of the iNaturalist app](https://drive.google.com/open?id=1EEYeXkgR7gf0f1KzCTJ95YN6hx-lFF5x){target="_blank"}
+    - Tip 3: [Tracking observations on your favorite refuges and hatcheries](https://drive.google.com/open?id=1xEJdFh408I3hpAm26cjC7WmZMpOsK7-b){target="_blank"}
+    - Tip 4: [Finding observations in need of further verification](https://drive.google.com/open?id=1V48dCDFyOGUogpCTBzcPjGtRO8Y6IZNQ){target="_blank"}
+    - Tip 5: [Improving photos for species ID](https://drive.google.com/open?id=10IUbuKBYMcPJrlIQ5UlNKy2Koav8J9zd){target="_blank"}
+    - Tip 6: [iNaturalist value and harness subject matter experts](https://drive.google.com/open?id=1T-VSXcJAsjQoGfxhz6Xv6MhOd3G3e7L3){target="_blank"}
+</div>
+
+```{r setup, include=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+pacman::p_load(flexdashboard, DT, fwsinat, dplyr, tidyr)
+source("./R/harvest_and_update.R")
+
+# update_contest_recs(harvest = FALSE)
+
+nwr18 <- readRDS("./output/nwr18_stats.rds")
+nfh18 <- readRDS("./output/nfh18_stats.rds")
+
+# Contest boundaries
+start_date <- "2018-06-01"
+end_date <- "2018-11-30"
+
+all_recs <- bind_rows(nwr18, nfh18) %>%
+  mutate(orgname = itistools::Cap(orgname),
+         orgname = gsub("National Wildlife Refuge", "NWR", orgname),
+         orgname = gsub("National Fish Hatchery", "NFH", orgname),
+         orgname = gsub(" And Conservation Area", "/CA", orgname),
+         orgname = gsub("D'arbonne", "D'Arbonne", orgname)) %>%
+  filter(date <= as.Date(end_date))
+spp_recs <- all_recs %>%
+  filter(itis_taxon_rank %in% c("Genus", "Species", "Subspecies", "Variety"),
+         grade == "research")
+
+contest_recs <- all_recs %>%
+  filter(date >= as.Date(start_date))
+
+contest_recs_spp <- contest_recs %>%
+  filter(itis_taxon_rank %in% c("Genus", "Species", "Subspecies", "Variety"),
+         grade == "research")
+
+ndays <- 0L
+```
+
+Dashboard
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Leaderboards last updated
+
+```{r}
+valueBox(value = format(Sys.time(), '%d %B, %Y'), icon = "glyphicon-calendar")
+```
+
+### Unique taxa documented
+
+```{r}
+valueBox(n_distinct(contest_recs_spp$sci_name), icon = "glyphicon-camera")
+```
+
+### Unique contributors
+
+```{r}
+valueBox(value = n_distinct(contest_recs$user), icon = "glyphicon-user")
+```
+
+### Refuges/Hatcheries with entries
+
+```{r}
+valueBox(n_distinct(contest_recs$orgname), icon = "glyphicon-leaf")
+```
+
+### BioBlitz days remaining
+
+```{r}
+valueBox(value = ndays, icon = "glyphicon-time")
+```
+
+Row
+-----------------------------------------------------------------------
+
+### **MOST SPECIES** {data-width=333}
+
+```{r}
+most_spp <- spp_recs %>%
+  filter(date >= as.Date(start_date)) %>%
+  group_by(orgname) %>%
+  summarize(n_spp = n_distinct(sci_name)) %>%
+  mutate(rank = rank(-1 * n_spp, ties = "min")) %>%
+  select(rank, orgname, n_spp) %>%
+  arrange(rank, orgname)
+names(most_spp) <- c("Rank", "Refuge or Hatchery", "# Total Species")
+
+DT::datatable(most_spp, rownames = FALSE, options = list(
+  pageLength = 15,
+  columnDefs = list(list(width = '20px', targets = 0),
+                    list(width = '60px', targets = 2),
+                    list(className = 'dt-left', targets = 1))))
+```
+
+### **MOST NEW SPECIES** {data-width=333}
+
+```{r}
+# Most new species
+spp_before <- spp_recs %>%
+  filter(date < as.Date(start_date)) %>%
+  group_by(orgname) %>%
+  summarize(before_spp = n_distinct(sci_name))
+
+spp_after <-  spp_recs %>%
+  group_by(orgname) %>%
+  summarize(after_spp = n_distinct(sci_name))
+
+most_new <- left_join(spp_after, spp_before, by = "orgname") %>%
+  mutate(before_spp = ifelse(is.na(before_spp), 0, before_spp),
+         n_new_spp = after_spp - before_spp,
+         rank = rank(-1 * n_new_spp, ties = "min")) %>%
+  select(rank, orgname, n_new_spp) %>%
+  filter(n_new_spp > 0) %>%
+  arrange(rank, orgname)
+names(most_new) <- c("Rank", "Refuge or Hatchery", "# New Species")
+
+DT::datatable(most_new,  rownames = FALSE, options = list(
+  pageLength = 15,
+  columnDefs = list(list(width = '20px', targets = 0),
+                    list(width = '60px', targets = 2),
+                    list(className = 'dt-left', targets = 1))))
+```
+
+### **MOST UNIQUE CONTRIBUTORS (≥ 5 records)** {data-width=333}
+
+```{r}
+most_users <- contest_recs %>%
+  group_by(orgname, user) %>%
+  summarize(n_recs = n()) %>%
+  filter(n_recs >= 5) %>%
+  group_by(orgname) %>%
+  summarize(n_users = n_distinct(user)) %>%
+  mutate(rank = rank(-1 * n_users, ties = "min")) %>%
+  select(rank, orgname, n_users) %>%
+  arrange(rank, orgname)
+names(most_users) <- c("Rank", "Refuge or Hatchery", "# Total Users")
+
+DT::datatable(most_users,  rownames = FALSE, options = list(
+  pageLength = 15,
+  columnDefs = list(list(width = '20px', targets = 0),
+                    list(width = '60px', targets = 2),
+                    list(className = 'dt-left', targets = 1))
+))
+```
+
+```{r upload, eval = FALSE}
+markdown::rpubsUpload("Region 4 Refuge and Hatchery iNaturalist Bioblitz 2018 - Contest Leaderboards",
+                      "unofficial_final_leaderboard.html",
+                      "https://api.rpubs.com/api/v1/document/391845/d5466570ba89463c90e2a6edde57691c",
+                       method = "internal")
+```
