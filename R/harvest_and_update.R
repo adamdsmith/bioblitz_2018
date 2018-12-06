@@ -5,8 +5,8 @@ update_contest_recs <- function(harvest = FALSE) {
   
   ### Initial retrieval
   if (!file.exists("./Output/nwr18_stats.rds")) {
-    # nwr18 <- inat_retrieve(nwr)
-    # saveRDS(nwr18, file = "./Output/nwr18_stats.rds")
+    nwr18 <- inat_retrieve(nwr)
+    saveRDS(nwr18, file = "./Output/nwr18_stats.rds")
   }
   if (!file.exists("./Output/nfh18_stats.rds")) {
     nfh18 <- inat_retrieve(nfh,
