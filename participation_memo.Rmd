@@ -1,0 +1,94 @@
+---
+fontsize: 12pt
+geometry: margin=1in
+output: 
+  pdf_document:
+    includes:
+      in_header: participation_memo_preamble.tex
+params:
+ orgname: placeholder
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::knit_hooks$set(inline = function(x) {
+  if(!is.numeric(x)) 
+    x
+  else
+    prettyNum(round(x, 2), big.mark=",")
+})
+pacman::p_load(dplyr, knitr, kableExtra)
+```
+
+```{r load-stuff, include=FALSE}
+short_lab <- gsub(" NWR.*| NFH.*", "", params$orgname)
+
+not_all_na <- function(x) all(!is.na(x))
+mailing <- readxl::read_xlsx("Output/challenge_coin_mailing_addresses.xlsx") %>%
+  filter(grepl(params$orgname, Company, ignore.case = TRUE)) %>%
+  select(Company:Address3, CITYZIP) %>%
+  select_if(not_all_na)
+address <- apply(mailing, 1, paste, collapse = " \\\n")
+
+# The data
+nwr18 <- readRDS("./output/nwr18_stats.rds")
+nfh18 <- readRDS("./output/nfh18_stats.rds")
+
+# Contest boundaries
+start_date <- "2018-06-01"
+end_date <- "2018-11-30"
+
+# Filter data to contest
+contest_recs <- bind_rows(nwr18, nfh18) %>%
+  mutate(orgname = itistools::Cap(orgname),
+         orgname = gsub("National Wildlife Refuge", "NWR", orgname),
+         orgname = gsub("National Fish Hatchery", "NFH", orgname),
+         orgname = gsub("D'arbonne", "D'Arbonne", orgname)) %>%
+  filter(date >= as.Date(start_date), date <= as.Date(end_date),
+         orgname == params$orgname)
+contest_spp_recs <- contest_recs %>% filter(itis_taxon_rank %in% c("Genus", "Species", "Subspecies", "Variety"),
+         grade == "research")
+```
+
+\begin{center}\includegraphics[width=6.5in]{letterhead_topper.png}\end{center}
+
+6 December, 2018
+
+```{r, results="asis"}
+cat(address)
+```
+
+Dear `r short_lab` Staff,
+
+Over the last 6 months, the Southeastern Region Inventory and Monitoring Branch of the U.S. Fish and Wildlife Service (USFWS) sponsored the Southeast Region's **iNaturalist Bioblitz Challenge**. The goals were to encourage a community connection with nature and photo document the incredible biodiversity across the Southeast Region's 130 National Wildlife Refuges and 14 National Fish Hatcheries.  You accepted the Challenge!
+
+It is our honor to recognize the 730 USFWS employees, volunteers, and visitors that contributed over 16,000 observations on 100 National Wildlife Refuges and eight National Fish Hatcheries during the six months of the Challenge. `r short_lab`'s `r nrow(contest_recs)` Bioblitz Challenge observations, `r nrow(contest_spp_recs)` of which have been identified to species to date, will be permanently archived and are contributing to a database of species occurrence records on USFWS properties nationwide. 
+
+In recognition of the employees, volunteers, and visitors that made this Challenge successful, we have included a commemorative iNaturalist Challenge coin for each of the iNaturalists that contributed at least 5 verifiable observations on `r params$orgname`.  We ask that staff make the coins available for pick-up by these contributors, to be identified by their iNaturalist username in Table 1 below.  
+
+Finally, a message for all that have participated in the Challenge:  We hope the Bioblitz Challenge is not the end, but the beginning of your experiences in exploring the biodiversity around you.  May you cherish your coin, and cherish even more your time in the outdoors.
+
+Happy iNaturalizing,
+
+\includegraphics[width=1.78in]{signature.png}
+
+Janet Ertel  
+Chief, Inventory, Monitoring and Research Branch  
+Southeast Region, National Wildlife Refuge System
+
+```{r}
+readRDS("Output/coin_awardees.rds") %>%
+  filter(orgname == params$orgname) %>%
+  mutate(user = gsub("_", "\\\\textunderscore ", user),
+         claimed = cell_spec("$\\square$", format = "latex", escape = FALSE)) %>%
+  select(`iNaturalist username` = user, `Coin claimed` = claimed) %>%
+  kable(booktabs = TRUE, longtable = TRUE, escape = FALSE, align = c("l", "c"), linesep = "", 
+        caption = paste("iNaturalist users contributing at least five observations on",
+                        params$orgname, "during the 2018 Southeast Region Refuge",
+                        "and Fish Hatchery iNaturalist Bioblitz")) %>%
+  kable_styling(full_width = FALSE, position = "left", latex_options = c("striped", "repeat_header"))
+```
+
+
+
+
